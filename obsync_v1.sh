@@ -94,8 +94,33 @@ git_sync() {
 preflight_sync() {
     for vault in "${VAULTS[@]}"; do
         if [[ -d "$vault/.git" ]]; then
-            log_info "Pre-flight pull: $(basename "$vault")"
-            git -C "$vault" pull --rebase --quiet || log_warn "Pull failed for $vault"
+            log_info "Pre-flight check: $(basename "$vault")"
+            
+            # Go into the vault directory
+            (
+                cd "$vault" || exit
+                
+                # 1. Check for dirty state
+                local stashed=0
+                if [[ -n $(git status --porcelain) ]]; then
+                    log_info "  Unstaged changes detected. Stashing..."
+                    git stash push -m "obsync-preflight" --quiet
+                    stashed=1
+                fi
+
+                # 2. Pull
+                log_info "  Pulling remote changes..."
+                if ! git pull --rebase --quiet; then
+                    log_warn "  Pull failed (Network or Conflict). Continuing with local files."
+                fi
+
+                # 3. Restore changes if we stashed them
+                if [[ $stashed -eq 1 ]]; then
+                    log_info "  Restoring local changes..."
+                    # Pop triggers merge if necessary. If conflict, git warns user.
+                    git stash pop --quiet || log_warn "  Conflict during stash pop. Please check git status."
+                fi
+            )
         else
             log_warn "Skipping non-git vault: $vault"
         fi
