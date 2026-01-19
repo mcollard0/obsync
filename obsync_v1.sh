@@ -123,7 +123,7 @@ run_watcher() {
                 if ! inotifywait -r -e close_write -e moved_to --exclude '\.git/' -t "$DEBOUNCE_SECONDS" "${VAULTS[@]}" -qq; then
                     # Exit Code 2 = Timeout Reached = Silence
                     for vault in "${VAULTS[@]}"; do
-                        git_sync "$vault" "Auto-save: $(date '+%H:%M')"
+                        git_sync "$vault" "Obsync $(date '+%H:%M')"
                     done
                     break # Go back to Step 1
                 fi
@@ -165,7 +165,7 @@ kill "$WATCHER_BG_PID" 2>/dev/null
 wait "$WATCHER_BG_PID" 2>/dev/null
 
 for vault in "${VAULTS[@]}"; do
-    git_sync "$vault" "Session End: $(date '+%Y-%m-%d %H:%M')"
+    git_sync "$vault" "Obsync Obsend: $(date '+%Y-%m-%d %H:%M')"
 done
 
 notify-send "Obsidian Sync" "All vaults synced." --icon=obsidian
