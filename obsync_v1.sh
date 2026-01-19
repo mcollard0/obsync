@@ -33,6 +33,42 @@ log_error() { echo -e "${RED}[${SCRIPT_NAME}]${NC} $*" >&2; }
 
 # --- CORE FUNCTIONS ---
 
+install_desktop_entry() {
+    log_info "Installing desktop entry..."
+    
+    # Get absolute path to this script
+    local script_path
+    script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+    
+    # Check if system desktop entry exists
+    local system_desktop="/usr/share/applications/obsidian.desktop"
+    if [[ ! -f "$system_desktop" ]]; then
+        log_error "System Obsidian desktop entry not found at $system_desktop"
+        log_error "Please install Obsidian first."
+        exit 1
+    fi
+    
+    # Create local applications directory if it doesn't exist
+    mkdir -p "${HOME}/.local/share/applications"
+    
+    local local_desktop="${HOME}/.local/share/applications/obsidian.desktop"
+    
+    # Copy system desktop entry
+    cp "$system_desktop" "$local_desktop"
+    
+    # Update Exec line to point to this script
+    sed -i "s|^Exec=.*|Exec=$script_path|" "$local_desktop"
+    
+    # Update desktop database (if command exists)
+    if command -v update-desktop-database &> /dev/null; then
+        update-desktop-database "${HOME}/.local/share/applications" 2>/dev/null || true
+    fi
+    
+    log_info "Desktop entry installed successfully!"
+    log_info "Your DE will now launch $script_path when you click the Obsidian launcher."
+    log_info "The local desktop entry in ~/.local/share/applications/ overrides the system one."
+}
+
 check_prerequisites() {
     local missing=()
     for cmd in inotifywait jq obsidian git notify-send; do
@@ -165,6 +201,12 @@ cleanup() {
 }
 
 # --- MAIN ---
+
+# Handle --install flag
+if [[ "${1:-}" == "--install" ]]; then
+    install_desktop_entry
+    exit 0
+fi
 
 trap cleanup EXIT
 

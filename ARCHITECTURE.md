@@ -1,69 +1,81 @@
-Implementation Plan for obsync:
+# obsync - Implementation Architecture
 
-Prompt to generate the script:
+## Overview
+**obsync** is a Bash script wrapper for Obsidian on Linux that provides **automated Git syncing** for all Obsidian vaults.
 
-"Create a Bash script to act as a wrapper for Obsidian on Linux. The script must handle automated Git syncing for all Obsidian vaults.
+---
 
-Prerequisites:
+## Prerequisites
 
-The script relies on inotify-tools for file watching and jq for parsing JSON.
+The script requires:
+- **`inotify-tools`** - for file watching
+- **`jq`** - for JSON parsing
+- **Standard Obsidian config location**: `~/.config/obsidian/obsidian.json`
 
-Assume standard Obsidian config location: ~/.config/obsidian/obsidian.json.
+---
 
-Script Logic & Flow:
+## Script Logic & Flow
 
-Setup & Discovery:
+### 1. Setup & Discovery
 
-Parse obsidian.json to find all vault paths.
+- Parse `obsidian.json` to find all vault paths
+- Store them in an array
 
-Store them in an array.
+### 2. Pre-Flight (Startup)
 
-Pre-Flight (Startup):
+- Iterate through each vault
+- Check if it is a git repo
+- Run `git pull --rebase` to ensure local files are up to date
 
-Iterate through each vault.
+### 3. Launch Application
 
-Check if it is a git repo.
+- Start **obsidian** as a background process (`&`)
+- Capture its **Process ID (PID)**
 
-Run git pull --rebase to ensure local files are up to date.
-
-Launch Application:
-
-Start obsidian as a background process (&).
-
-Capture its Process ID (PID).
-
-The Watcher Loop (Background Function):
+### 4. The Watcher Loop (Background Function)
 
 While the Obsidian PID is running:
 
-Use inotifywait in recursive monitor mode (-m -r) on the vault directories.
+- Use **`inotifywait`** in recursive monitor mode (`-m -r`) on the vault directories
+- Listen for `close_write` and `moved_to` events
 
-Listen for close_write and moved_to events.
+#### Debounce Logic:
 
-Debounce Logic:
+1. When an event triggers, start a **cooldown timer** (e.g., 60 seconds)
+2. If another event triggers before 60s, **reset the timer** (wait for the user to stop typing)
+3. Once the 60s timer expires without new events:
 
-When an event triggers, start a 'cooldown' timer (e.g., 60 seconds).
+```bash
+git add .
+git commit -m "Auto-save: $(date)"
+```
 
-If another event triggers before 60s, reset the timer (wait for the user to stop typing).
+4. *(Optional)* Run `git push`
 
-Once the 60s timer expires without new events:
+### 5. Shutdown Sequence
 
-Run git add .
+- Wait for the Obsidian PID to exit (using `wait $PID`)
+- Immediately run a final:
+  - `git add .`
+  - `git commit -m "Session end"`
+  - `git push`
+- Output a **notification** (using `notify-send`) confirming the sync is complete
 
-Run git commit -m "Auto-save: $(date)"
+---
 
-(Optional) Run git push.
+## Constraints
 
-Shutdown Sequence:
+- ✅ Handle **spaces in file paths** correctly
+- ✅ Do **not push** if the commit fails (empty commit)
 
-Wait for the Obsidian PID to exit (using wait $PID).
+---
 
-Immediately run a final git add ., git commit -m "Session end", and git push.
+## Additional QOL Improvements
 
-Output a notification (using notify-send) confirming the sync is complete.
+- **Late stage**: Added a `--install` helper
+- **Late stage**: Added a handler to stash and pop "sando" when changes are made before the program is installed, files edited outside Obsidian, and so on
 
-Constraints:
+---
 
-Handle spaces in file paths correctly.
+*-Michael, yes that Michael. I'm sorry too. Please stop sending pizza. It's getting weird. The delivery guy is my best man at the wedding.*
 
-Do not push if the commit fails (empty commit)."
