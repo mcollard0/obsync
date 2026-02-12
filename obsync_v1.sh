@@ -146,7 +146,7 @@ preflight_sync() {
 
                 # 2. Pull
                 log_info "  Pulling remote changes..."
-                if ! git pull --rebase --quiet; then
+                if ! git pull --quiet; then
                     log_warn "  Pull failed (Network or Conflict). Continuing with local files."
                 fi
 
