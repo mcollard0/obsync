@@ -136,6 +136,9 @@ preflight_sync() {
             (
                 cd "$vault" || exit
                 
+                # 0. Configure pull strategy
+                git config pull.rebase false
+                
                 # 1. Check for dirty state
                 local stashed=0
                 if [[ -n $(git status --porcelain) ]]; then
