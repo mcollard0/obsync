@@ -29,8 +29,10 @@ The script requires:
 
 ### 3. Launch Application
 
-- Start **obsidian** as a background process (`&`)
-- Capture its **Process ID (PID)**
+- If **Obsidian** is already running, detect either an `obsidian` process or its Electron `/obsidian/app.asar` process, invoke `obsidian "$@"`, and exit. This forwards URI handler arguments (such as `obsidian://open?...`) to the existing instance without a second watcher or Git pre-flight.
+- Otherwise, start **obsidian** as a background process with the original arguments (`obsidian "$@" &`).
+- Capture its **Process ID (PID)** and begin the sync watcher lifecycle.
+- The installed `obsidian.desktop` launcher uses `%U` in `Exec` so desktop environments pass incoming `obsidian://` URIs to the wrapper.
 
 ### 4. The Watcher Loop (Background Function)
 

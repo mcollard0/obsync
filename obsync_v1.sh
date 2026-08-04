@@ -57,7 +57,7 @@ install_desktop_entry() {
     cp "$system_desktop" "$local_desktop"
     
     # Update Exec line to point to this script
-    sed -i "s|^Exec=.*|Exec=$script_path|" "$local_desktop"
+    sed -i "s|^Exec=.*|Exec=$script_path %U|" "$local_desktop"
     
     # Update desktop database (if command exists)
     if command -v update-desktop-database &> /dev/null; then
@@ -210,6 +210,11 @@ if [[ "${1:-}" == "--install" ]]; then
     install_desktop_entry
     exit 0
 fi
+if pgrep -x obsidian > /dev/null || pgrep -f '/obsidian/app\.asar' > /dev/null; then
+    log_info "Obsidian is already running. Forwarding launch arguments..."
+    obsidian "$@"
+    exit $?
+fi
 
 trap cleanup EXIT
 
@@ -218,7 +223,7 @@ discover_vaults
 preflight_sync
 
 log_info "Launching Obsidian..."
-obsidian &
+obsidian "$@" &
 OBSIDIAN_PID=$!
 
 # Run watcher in foreground (No & needed because we want to block until Obsidian dies)
