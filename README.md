@@ -50,13 +50,17 @@
 
 ## Usage
 
-Simply nstall Obsidian helper in step 4A above or,
-
-Simply run the script instead of launching Obsidian directly to test it out before committing:
+Simply install Obsidian helper in step 4A above 
+*or*
+run the script instead of launching Obsidian directly to test it out before committing:
 
 ```bash
 ./obsync_v1.sh
 ```
+
+## Working Function
+I realized somewhere along the way there was no explaination of how it works. I had to go back and look at the source. Probably the wrong thing to do. So, running the Obs "shim", it scans the vaults and sets up a inodify file watcher for each. If a .git does not exist, it bypasses that particular entry. This was a concern of mine, there are some local vaults I don't want ot sync to github. After api keys started to be leaked, it was clear private repos are not secure. 
+Anyway, after that it launches Obsidian.  It also has debounce seconds to keep from hammering, although the default value of 60 I suppose is... subsufficient. 
 
 ## Configuration
 
