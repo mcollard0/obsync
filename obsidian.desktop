@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Obsidian
+Exec=/run/media/michael/FAST_ARCHIVE/Programming/obsync/obsync_v1.sh %U
+Terminal=false
+Type=Application
+Icon=obsidian
+#StartupWMClass=obsidian
+StartupWMClass=md.Obsidian
+Comment=Obsidian
+MimeType=x-scheme-handler/obsidian;
+Categories=Office;
